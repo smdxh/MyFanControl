@@ -68,7 +68,7 @@ class PWMResponse:
         self.code = code
         self.description = description # 弹窗提示
         self.response = response # ttl返回的内容
-        self.dutyRatio = dutyRatio
+        self.dutyRatio = dutyRatio #占空比
 
 
 """
