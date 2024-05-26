@@ -5,7 +5,7 @@ from PyQt6.QtGui import QIcon,QAction
 from PyQt6.QtWidgets import QApplication,QMainWindow,QSystemTrayIcon,QMenu,QTabWidget,QSpinBox,QHBoxLayout
 from PyQt6.QtWidgets import QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider,QVBoxLayout,QPushButton
 from PIL import Image, ImageDraw
-TITLE = "机箱风扇控制器2.2"
+TITLE = "机箱风扇控制器2.3.1"
 
 class setPWMThread(QThread):
     # 定义一个信号，用于向主线程发送数据
@@ -154,10 +154,12 @@ class WinForm(QMainWindow):
     # 输入框变化
     def valueChange1(self,a):
         # print(a)
+        self.cb3.setChecked(Qt.CheckState.Unchecked.value)
         if self.sp2.value() <= a : self.sp2.setValue(a + 1)
     # 输入框变化
     def valueChange2(self,a):
         # print(a)
+        self.cb3.setChecked(Qt.CheckState.Unchecked.value)
         if a <= self.sp1.value() : self.sp1.setValue(a - 1)
     # 勾选框变化
     def changecb1(self,a):
