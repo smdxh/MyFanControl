@@ -153,12 +153,10 @@ class WinForm(QMainWindow):
     #         # self.cliecked.emit(self.value())	# 点击发送信号，这里可不要    
     # 输入框变化
     def valueChange1(self,a):
-        # print(a)
         self.cb3.setChecked(Qt.CheckState.Unchecked.value)
         if self.sp2.value() <= a : self.sp2.setValue(a + 1)
     # 输入框变化
     def valueChange2(self,a):
-        # print(a)
         self.cb3.setChecked(Qt.CheckState.Unchecked.value)
         if a <= self.sp1.value() : self.sp1.setValue(a - 1)
     # 勾选框变化
@@ -166,14 +164,10 @@ class WinForm(QMainWindow):
         saveConfig('USER','TIMEOUT_EXCEPTION',str(a))
     # 勾选框变化
     def changecb2(self,a):
-        conf.set('USER','RETURN_ERROR',str(a))
-        with open('config.ini','w') as configfile:
-            conf.write(configfile)
+        saveConfig('USER','RETURN_ERROR',str(a))
     # 勾选框变化
     def changecb3(self,a):
-        conf.set('USER','manual',str(a))
-        with open('config.ini','w') as configfile:
-            conf.write(configfile)
+        saveConfig('USER','manual',str(a))
     # 滑动条变化
     def changes(self):
         self.cb3.setChecked(Qt.CheckState.Checked.value)
