@@ -2,10 +2,10 @@ from controlTool import *
 import sys
 from PyQt6.QtCore import QCoreApplication,QTimer,Qt,QThread,pyqtSignal
 from PyQt6.QtGui import QIcon,QAction
-from PyQt6.QtWidgets import QApplication,QMainWindow,QSystemTrayIcon,QMenu
-from PyQt6.QtWidgets import QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider
+from PyQt6.QtWidgets import QApplication,QMainWindow,QSystemTrayIcon,QMenu,QTabWidget,QSpinBox,QHBoxLayout
+from PyQt6.QtWidgets import QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider,QVBoxLayout,QPushButton
 from PIL import Image, ImageDraw
-TITLE = "机箱风扇控制器2.1"
+TITLE = "机箱风扇控制器2.2"
 
 class setPWMThread(QThread):
     # 定义一个信号，用于向主线程发送数据
@@ -40,24 +40,26 @@ class WinForm(QMainWindow):
         self.label3 = QLabel("占空比：获取中...")
         self.label4 = QLabel("返回结果：获取中...")
         self.label5 = QLabel("")
+        self.tabs = QTabWidget()# Initialize tab screen
+        self.tab1 = QWidget()
+        self.tab2 = QWidget()
+        # self.tabs.resize(300,200)
 
         self.cb1 = QCheckBox('读写超时提示',self)
         self.cb2 = QCheckBox('PWM返回错误信号提示',self)
         self.cb3 = QCheckBox('手动调整占空比',self)
 
-        self.s = QSlider(Qt.Orientation.Horizontal)
-        self.s.setMaximum(100)
-        self.s.setMinimum(0)
-        self.s.setPageStep(10)
-        self.s.setSingleStep(1)
-        self.s.setTickInterval(10) #刻度间隔
-        self.s.setTickPosition(QSlider.TickPosition.TicksBelow) #在（水平）滑块下方绘制刻度线
+        # Add tabs
+        self.tabs.addTab(self.tab1,"默认")
+        self.tabs.addTab(self.tab2,"折线图")
+
+        self.tab1UI()
 
         self.cb1.setChecked(conf.getint('USER','TIMEOUT_EXCEPTION'))
         self.cb2.setChecked(conf.getint('USER','RETURN_ERROR'))
         self.cb3.setChecked(conf.getint('USER','manual'))
 
-        mylayout = QGridLayout()
+        mylayout = QGridLayout(self)
         mylayout.addWidget(self.label1,0,0)
         mylayout.addWidget(self.label2,1,0)
         mylayout.addWidget(self.label3,2,0)
@@ -66,14 +68,15 @@ class WinForm(QMainWindow):
         mylayout.addWidget(self.cb2,1,1)
         mylayout.addWidget(self.cb3,2,1)
         mylayout.addWidget(self.label5,4,1)
-        mylayout.addWidget(self.s,3,0,1,2,alignment=Qt.AlignmentFlag.AlignVCenter)
+        mylayout.addWidget(self.tabs,3,0,1,2,alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.cb1.stateChanged.connect(self.changecb1)
         self.cb2.stateChanged.connect(self.changecb2)
         self.cb3.stateChanged.connect(self.changecb3)
         self.s.sliderPressed.connect(self.changes)
         self.s.sliderMoved.connect(self.changes)
-        self.s.sliderPressed.connect(self.changes)
+        # self.s.mousePressEvent(self.changes)
+        # self.s.sliderPressed.connect(self.changes)
 
         self.setLayout(mylayout)
         #创建widget窗口实例
@@ -86,11 +89,67 @@ class WinForm(QMainWindow):
         self.timer = QTimer()
         self.timer.start(1000) #每1000ms刷新一次
         self.timer.timeout.connect(self.updateUI)
+
+    def clickButton(self):
+        sender = self.sender()
+        if sender.text() == '保存':
+            conf.set('USER','begin_temperature',str(self.sp1.value()))
+            saveConfig('USER','max_temperature',str(self.sp2.value()))
+        # print(sender.text() + '被点击')
+
+    def tab1UI(self):         
+        self.tab1layout = QVBoxLayout(self)
+        self.tab1layout.addWidget(QLabel("自动调整转速："))
+
+        mylayout = QHBoxLayout(self)
+        autowidget = QWidget()
+        autowidget.setLayout(mylayout)
+        # self.autolabel1.setAlignment(Qt.AlignmentFlag.AlignRight)
+        l1 = QLabel("启动温度：")
+        l1.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        l1.setAlignment(Qt.AlignmentFlag.AlignRight)
+        mylayout.addWidget(l1)
+        self.sp1 = QSpinBox()
+        self.sp1.setValue(conf.getint('USER','begin_temperature'))
+        self.sp1.setRange(0,120)
+        mylayout.addWidget(self.sp1)
+        l2 = QLabel("满转温度：")
+        l2.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        l2.setAlignment(Qt.AlignmentFlag.AlignRight)
+        mylayout.addWidget(l2)
+        self.sp2 = QSpinBox()
+        # self.sp2.setAlignment(Qt.AlignmentFlag.AlignTop)
+        self.sp2.setValue(conf.getint('USER','max_temperature'))
+        self.sp2.setRange(0,120)
+        mylayout.addWidget(self.sp2)
+
+        button1 = QPushButton('保存')
+        mylayout.addWidget(button1)
+        button1.clicked.connect(self.clickButton)
+
+
+        self.tab1layout.addWidget(autowidget)
+        self.tab1layout.addWidget(QLabel("拖动调整转速："))
+        self.s = QSlider(Qt.Orientation.Horizontal)
+        self.s.setMaximum(100)
+        self.s.setMinimum(0)
+        self.s.setPageStep(10)
+        self.s.setSingleStep(1)
+        self.s.setTickInterval(10) #刻度间隔
+        self.s.setTickPosition(QSlider.TickPosition.TicksBelow) #在（水平）滑块下方绘制刻度线
+
+        self.tab1layout.addWidget(self.s)
+        self.tab1.setLayout(self.tab1layout)
+
+    # def mousePressEvent(self, event):
+    #     if event.button() == Qt.LeftButton:
+    #         super().mousePressEvent(event)      # 调用父级的单击事件，听说这样能不影响进度条原来的拖动
+    #         val_por = event.pos().x() / self.width()    # 获取鼠标在进度条的相对位置
+    #         self.setValue(int(val_por * self.maximum()))	# 改变进度条的值
+    #         # self.cliecked.emit(self.value())	# 点击发送信号，这里可不要    
     # 勾选框变化
     def changecb1(self,a):
-        conf.set('USER','TIMEOUT_EXCEPTION',str(a))
-        with open('config.ini','w') as configfile:
-            conf.write(configfile)
+        saveConfig('USER','TIMEOUT_EXCEPTION',str(a))
     # 勾选框变化
     def changecb2(self,a):
         conf.set('USER','RETURN_ERROR',str(a))
@@ -114,7 +173,7 @@ class WinForm(QMainWindow):
         if self.cb3.isChecked():
             self.dutyRatio = self.s.value()
         else:
-            self.dutyRatio = round((maxTem-20) * 1.6)
+            self.dutyRatio = round((maxTem-self.sp1.value()) * (100/(self.sp2.value()-self.sp1.value())))
         self.label1.setText("CPU温度：%d" %cpuTem)
         self.label2.setText("GPU温度：%d" %gpuTem)
         if self.mythread.isRunning() :

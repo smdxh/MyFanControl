@@ -14,6 +14,12 @@ from OpenHardwareMonitor.Hardware import Computer # type: ignore
 
 conf = configparser.ConfigParser()
 conf.read('config.ini')
+def saveConfig(section, option, value=None):
+    conf.set(section,option,str(value))
+    with open('config.ini','w') as configfile:
+        conf.write(configfile)
+
+
 def iniConfig():
     conf['serial'] = {
         'baudrate' : 9600,          # 波特率  
@@ -30,6 +36,9 @@ def iniConfig():
         'TIMEOUT_EXCEPTION' : 2, 
         'RETURN_ERROR' : 2, 
         'manual' : 0, 
+        'begin_temperature' : 20,
+        'max_temperature' : 80,
+
     }
 
     with open('config.ini','w') as configfile:
@@ -53,7 +62,7 @@ ser.timeout = int(conf['serial']['timeout'])  # 读取超时时间为1秒
 ser.write_timeout = conf.getint('serial','write_timeout')  # 写超时
 
 errCount = 0
-oldDR = -1
+oldDR = -100 #必须大于波动幅度差值，否则启动时不发送设置信号
 rightResult = conf['DEFAULT']['rightResult'].encode() #PWM设备正确执行时应该返回的信息
 
 class PWMResponse:
@@ -135,7 +144,7 @@ def setPWM(DR):
         return PWMResponse(PWMResponse.TIMEOUT_EXCEPTION,'读写超时，你PWM和ttl接口是不是生锈了',('%02d' %DR))
     except SerialException:
         ser.close() # 出问题需要立刻关闭端口，以便重新获取端口号
-        return PWMResponse(PWMResponse.SERIAL_EXCEPTION,'端口读取错误',('%02d' %DR))
+        return PWMResponse(PWMResponse.SERIAL_EXCEPTION,'没找到USB设备',('%02d' %DR))
     except Exception as r:
         ser.close() # 出问题需要立刻关闭端口，以便重新获取端口号
         return PWMResponse(PWMResponse.UNKNOW_EXCEPTION,'不知道发生什么了，这是报错'+str(r)+'要不要再救一下？',('%02d' %DR))
