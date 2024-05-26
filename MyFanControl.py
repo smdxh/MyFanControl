@@ -5,7 +5,7 @@ from PyQt6.QtGui import QIcon,QAction
 from PyQt6.QtWidgets import QApplication,QMainWindow,QSystemTrayIcon,QMenu,QTabWidget,QSpinBox,QHBoxLayout
 from PyQt6.QtWidgets import QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider,QVBoxLayout,QPushButton
 from PIL import Image, ImageDraw
-TITLE = "机箱风扇控制器2.3.1"
+TITLE = "机箱风扇控制器2.3"
 
 class setPWMThread(QThread):
     # 定义一个信号，用于向主线程发送数据
@@ -28,7 +28,7 @@ class WinForm(QMainWindow):
         super(WinForm,self).__init__(parent)
         self.sysIcon = QIcon('fan.png')
         self.result = PWMResponse(PWMResponse.NONE,"0","0","无变化")
-        self.isWait = False
+        self.isMessageBox = False # 弹窗提示待处理
         self.initWindow()
         self.initTrayIcon()
         self.initUI()
@@ -73,8 +73,9 @@ class WinForm(QMainWindow):
         self.cb1.stateChanged.connect(self.changecb1)
         self.cb2.stateChanged.connect(self.changecb2)
         self.cb3.stateChanged.connect(self.changecb3)
-        self.s.sliderPressed.connect(self.changes)
-        self.s.sliderMoved.connect(self.changes)
+        self.s.sliderPressed.connect(self.changes) # 点击滑块
+        self.s.sliderMoved.connect(self.changes) # 拖动滑块
+        self.s.actionTriggered.connect(self.changes) # 点击滑动条
         # self.s.mousePressEvent(self.changes)
         # self.s.sliderPressed.connect(self.changes)
 
@@ -171,6 +172,11 @@ class WinForm(QMainWindow):
     # 滑动条变化
     def changes(self):
         self.cb3.setChecked(Qt.CheckState.Checked.value)
+    # 测试用例
+    def testChange(self,a):
+        sender = self.sender()
+        print(sender,a)
+        # self.cb3.setChecked(Qt.CheckState.Checked.value)
 
     # 更新主界面内容
     def updateUI(self):
@@ -185,8 +191,8 @@ class WinForm(QMainWindow):
         self.label1.setText("CPU温度：%d" %cpuTem)
         self.label2.setText("GPU温度：%d" %gpuTem)
         if self.mythread.isRunning() :
-            self.label4.setText("返回结果：%s" %"线程运行中")
-        elif self.isWait == True:
+            self.label4.setText("返回结果：%s" %"PWM设置中")
+        elif self.isMessageBox == True:
             self.label4.setText("返回结果：%s" %"错误待处理")
         else:
             self.mythread = setPWMThread(data=self.dutyRatio) #设置风扇占空比
@@ -218,22 +224,22 @@ class WinForm(QMainWindow):
             case PWMResponse.TIMEOUT_EXCEPTION : 
                 self.changeTrayIcon(result)
                 if self.cb1.isChecked():
-                    self.isWait = True
+                    self.isMessageBox = True
                     result = QMessageBox.question(self,TITLE,result.description,QMessageBox.StandardButton.Retry,QMessageBox.StandardButton.Cancel)
-                    self.isWait = False
+                    self.isMessageBox = False
                     self.cb1.setChecked(result == QMessageBox.StandardButton.Retry)
             case PWMResponse.RETURN_ERROR : 
                 self.changeTrayIcon(result)
                 if self.cb2.isChecked():
-                    self.isWait = True
+                    self.isMessageBox = True
                     result = QMessageBox.question(self,TITLE,result.description,QMessageBox.StandardButton.Retry,QMessageBox.StandardButton.Cancel)
-                    self.isWait = False
+                    self.isMessageBox = False
                     self.cb2.setChecked(result == QMessageBox.StandardButton.Retry)
             case _ : 
                 self.changeTrayIcon(result)
-                self.isWait = True
+                self.isMessageBox = True
                 result = QMessageBox.question(self,TITLE,result.description,QMessageBox.StandardButton.Retry,QMessageBox.StandardButton.Cancel)
-                self.isWait = False
+                self.isMessageBox = False
                 if result != QMessageBox.StandardButton.Retry: sys.exit()
             
         
