@@ -39,7 +39,8 @@ class WinForm(QMainWindow):
         self.label2 = QLabel("GPU温度：获取中...")
         self.label3 = QLabel("占空比：获取中...")
         self.label4 = QLabel("返回结果：获取中...")
-        self.label5 = QLabel("")
+        self.label5 = QLabel("Author：smdxh")
+        self.label5.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.tabs = QTabWidget()# Initialize tab screen
         self.tab1 = QWidget()
         self.tab2 = QWidget()
@@ -162,9 +163,9 @@ class WinForm(QMainWindow):
     # 输入框变化
     def changeTab(self,a):
         if a == 0:
-            self.dragAdjustDutyRatio.setCheckable(True)
+            self.dragAdjustDutyRatio.setEnabled(True)
         else:
-            self.dragAdjustDutyRatio.setCheckable(False)
+            self.dragAdjustDutyRatio.setEnabled(False)
         saveConfig('USER','tabs_index',str(a))
     # 输入框变化
     def valueChange2(self,a):
