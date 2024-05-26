@@ -47,7 +47,7 @@ class WinForm(QMainWindow):
 
         self.cb1 = QCheckBox('读写超时提示',self)
         self.cb2 = QCheckBox('PWM返回错误信号提示',self)
-        self.cb3 = QCheckBox('手动调整占空比',self)
+        self.cb3 = QCheckBox('拖动调整占空比',self)
 
         # Add tabs
         self.tabs.addTab(self.tab1,"默认")
@@ -99,7 +99,7 @@ class WinForm(QMainWindow):
 
     def tab1UI(self):         
         self.tab1layout = QVBoxLayout(self)
-        self.tab1layout.addWidget(QLabel("自动调整转速："))
+        self.tab1layout.addWidget(QLabel("自动调整占空比："))
 
         mylayout = QHBoxLayout(self)
         autowidget = QWidget()
@@ -133,7 +133,7 @@ class WinForm(QMainWindow):
 
 
         self.tab1layout.addWidget(autowidget)
-        self.tab1layout.addWidget(QLabel("拖动调整转速："))
+        self.tab1layout.addWidget(QLabel("拖动调整占空比："))
         self.s = QSlider(Qt.Orientation.Horizontal)
         self.s.setMaximum(100)
         self.s.setMinimum(0)
