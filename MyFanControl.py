@@ -106,21 +106,25 @@ class WinForm(QMainWindow):
         autowidget.setLayout(mylayout)
         # self.autolabel1.setAlignment(Qt.AlignmentFlag.AlignRight)
         l1 = QLabel("启动温度：")
-        l1.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        # l1.setAlignment(Qt.AlignmentFlag.AlignBottom)
         l1.setAlignment(Qt.AlignmentFlag.AlignRight)
         mylayout.addWidget(l1)
         self.sp1 = QSpinBox()
+        l1.setBuddy(self.sp1) #伙伴控件
         self.sp1.setValue(conf.getint('USER','begin_temperature'))
-        self.sp1.setRange(0,120)
+        self.sp1.setRange(0,199)
+        self.sp1.valueChanged.connect(self.valueChange1)
         mylayout.addWidget(self.sp1)
         l2 = QLabel("满转温度：")
-        l2.setAlignment(Qt.AlignmentFlag.AlignBottom)
+        # l2.setAlignment(Qt.AlignmentFlag.AlignBottom)
         l2.setAlignment(Qt.AlignmentFlag.AlignRight)
         mylayout.addWidget(l2)
         self.sp2 = QSpinBox()
+        l2.setBuddy(self.sp2) #伙伴控件
         # self.sp2.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.sp2.setValue(conf.getint('USER','max_temperature'))
-        self.sp2.setRange(0,120)
+        self.sp2.setRange(1,120)
+        self.sp2.valueChanged.connect(self.valueChange2)
         mylayout.addWidget(self.sp2)
 
         button1 = QPushButton('保存')
@@ -147,6 +151,14 @@ class WinForm(QMainWindow):
     #         val_por = event.pos().x() / self.width()    # 获取鼠标在进度条的相对位置
     #         self.setValue(int(val_por * self.maximum()))	# 改变进度条的值
     #         # self.cliecked.emit(self.value())	# 点击发送信号，这里可不要    
+    # 输入框变化
+    def valueChange1(self,a):
+        # print(a)
+        if self.sp2.value() <= a : self.sp2.setValue(a + 1)
+    # 输入框变化
+    def valueChange2(self,a):
+        # print(a)
+        if a <= self.sp1.value() : self.sp1.setValue(a - 1)
     # 勾选框变化
     def changecb1(self,a):
         saveConfig('USER','TIMEOUT_EXCEPTION',str(a))
