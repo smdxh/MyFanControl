@@ -36,8 +36,10 @@ def iniConfig():
         'TIMEOUT_EXCEPTION' : 2, 
         'RETURN_ERROR' : 2, 
         'manual' : 0, 
+        'tabs_index' : 0, 
         'begin_temperature' : 20,
         'max_temperature' : 80,
+        'duty_ratio':0,
 
     }
 

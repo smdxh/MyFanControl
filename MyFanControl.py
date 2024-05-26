@@ -47,17 +47,19 @@ class WinForm(QMainWindow):
 
         self.cb1 = QCheckBox('读写超时提示',self)
         self.cb2 = QCheckBox('PWM返回错误信号提示',self)
-        self.cb3 = QCheckBox('拖动调整占空比',self)
+        self.dragAdjustDutyRatio = QCheckBox('拖动调整占空比',self)
 
         # Add tabs
         self.tabs.addTab(self.tab1,"默认")
         self.tabs.addTab(self.tab2,"折线图")
+        self.tabs.setCurrentIndex(conf.getint('USER','tabs_index'))
+        self.tabs.currentChanged.connect(self.changeTab)
 
         self.tab1UI()
 
         self.cb1.setChecked(conf.getint('USER','TIMEOUT_EXCEPTION'))
         self.cb2.setChecked(conf.getint('USER','RETURN_ERROR'))
-        self.cb3.setChecked(conf.getint('USER','manual'))
+        self.dragAdjustDutyRatio.setChecked(conf.getint('USER','manual'))
 
         mylayout = QGridLayout(self)
         mylayout.addWidget(self.label1,0,0)
@@ -66,19 +68,20 @@ class WinForm(QMainWindow):
         mylayout.addWidget(self.label4,4,0)
         mylayout.addWidget(self.cb1,0,1)
         mylayout.addWidget(self.cb2,1,1)
-        mylayout.addWidget(self.cb3,2,1)
+        mylayout.addWidget(self.dragAdjustDutyRatio,2,1)
         mylayout.addWidget(self.label5,4,1)
         mylayout.addWidget(self.tabs,3,0,1,2,alignment=Qt.AlignmentFlag.AlignVCenter)
 
         self.cb1.stateChanged.connect(self.changecb1)
         self.cb2.stateChanged.connect(self.changecb2)
-        self.cb3.stateChanged.connect(self.changecb3)
+        self.dragAdjustDutyRatio.stateChanged.connect(self.changecb3)
         self.s.sliderPressed.connect(self.changes) # 点击滑块
         self.s.sliderMoved.connect(self.changes) # 拖动滑块
         self.s.actionTriggered.connect(self.changes) # 点击滑动条
+        self.s.valueChanged.connect(self.changeDutyRatio) # 点击滑动条
+        self.s.setValue(conf.getint('USER','duty_ratio'))
         # self.s.mousePressEvent(self.changes)
         # self.s.sliderPressed.connect(self.changes)
-
         self.setLayout(mylayout)
         #创建widget窗口实例
         main_frame=QWidget()
@@ -102,33 +105,33 @@ class WinForm(QMainWindow):
         self.tab1layout = QVBoxLayout(self)
         self.tab1layout.addWidget(QLabel("自动调整占空比："))
 
-        mylayout = QHBoxLayout(self)
+        mylayout = QGridLayout(self)
         autowidget = QWidget()
         autowidget.setLayout(mylayout)
         l1 = QLabel("启动温度：")
         l1.setAlignment(Qt.AlignmentFlag.AlignRight)
-        l1.setContentsMargins(0,4,0,0)
-        mylayout.addWidget(l1)
+        l1.setContentsMargins(0,3,0,0)
+        mylayout.addWidget(l1,0,0)
         self.sp1 = QSpinBox()
         l1.setBuddy(self.sp1) #伙伴控件
         self.sp1.setValue(conf.getint('USER','begin_temperature'))
         self.sp1.setRange(0,199)
         self.sp1.valueChanged.connect(self.valueChange1)
-        mylayout.addWidget(self.sp1)
+        mylayout.addWidget(self.sp1,0,1)
         l2 = QLabel("满转温度：")
         l2.setAlignment(Qt.AlignmentFlag.AlignRight)
-        l2.setContentsMargins(0,4,0,0)
-        mylayout.addWidget(l2)
+        l2.setContentsMargins(0,3,0,0)
+        mylayout.addWidget(l2,0,2)
         self.sp2 = QSpinBox()
         l2.setBuddy(self.sp2) #伙伴控件
         self.sp2.setValue(conf.getint('USER','max_temperature'))
         self.sp2.setRange(1,120)
         self.sp2.valueChanged.connect(self.valueChange2)
-        mylayout.addWidget(self.sp2)
+        mylayout.addWidget(self.sp2,0,3)
 
         button1 = QPushButton('保存')
-        mylayout.addWidget(button1)
         button1.clicked.connect(self.clickButton)
+        mylayout.addWidget(button1,1,3)
 
         self.tab1layout.addWidget(autowidget)
         self.tab1layout.addWidget(QLabel("拖动调整占空比："))
@@ -151,11 +154,21 @@ class WinForm(QMainWindow):
     #         # self.cliecked.emit(self.value())	# 点击发送信号，这里可不要    
     # 输入框变化
     def valueChange1(self,a):
-        self.cb3.setChecked(Qt.CheckState.Unchecked.value)
-        if self.sp2.value() <= a : self.sp2.setValue(a + 1)
+        self.dragAdjustDutyRatio.setChecked(Qt.CheckState.Unchecked.value)
+        if self.sp2.value() <= a : self.sp2.setValue(a + 1) 
+    # 手动调整占空比
+    def changeDutyRatio(self,a):
+        saveConfig('USER','duty_ratio',str(a))   
+    # 输入框变化
+    def changeTab(self,a):
+        if a == 0:
+            self.dragAdjustDutyRatio.setCheckable(True)
+        else:
+            self.dragAdjustDutyRatio.setCheckable(False)
+        saveConfig('USER','tabs_index',str(a))
     # 输入框变化
     def valueChange2(self,a):
-        self.cb3.setChecked(Qt.CheckState.Unchecked.value)
+        self.dragAdjustDutyRatio.setChecked(Qt.CheckState.Unchecked.value)
         if a <= self.sp1.value() : self.sp1.setValue(a - 1)
     # 勾选框变化
     def changecb1(self,a):
@@ -168,12 +181,12 @@ class WinForm(QMainWindow):
         saveConfig('USER','manual',str(a))
     # 滑动条变化
     def changes(self):
-        self.cb3.setChecked(Qt.CheckState.Checked.value)
+        self.dragAdjustDutyRatio.setChecked(Qt.CheckState.Checked.value)
     # 测试用例
     def testChange(self,a):
         sender = self.sender()
         print(sender,a)
-        # self.cb3.setChecked(Qt.CheckState.Checked.value)
+        # self.dragAdjustDutyRatio.setChecked(Qt.CheckState.Checked.value)
 
     # 更新主界面内容
     def updateUI(self):
@@ -181,7 +194,7 @@ class WinForm(QMainWindow):
         cpuTem = getCPUTemp()
         maxTem = gpuTem
         if cpuTem > gpuTem : maxTem = cpuTem
-        if self.cb3.isChecked():
+        if self.dragAdjustDutyRatio.isChecked():
             self.dutyRatio = self.s.value()
         else:
             self.dutyRatio = round((maxTem-self.sp1.value()) * (100/(self.sp2.value()-self.sp1.value())))
@@ -200,7 +213,7 @@ class WinForm(QMainWindow):
     def on_data_received(self,result):
         self.result = result
         self.label3.setText("占空比：%s" %result.dutyRatio)
-        if not self.cb3.isChecked():
+        if not self.dragAdjustDutyRatio.isChecked():
             self.s.setValue(self.dutyRatio)
         self.resultMessage(result)
         self.label4.setText("返回结果：%s" %result.response)
