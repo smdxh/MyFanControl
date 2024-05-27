@@ -37,6 +37,7 @@ class WinForm(QMainWindow):
         self.isMessageBox = False # 弹窗提示待处理
         self.movePointIndex = None # 折线图中准备拖拽的点的下标
         self.temperatureList = getListConfig('USER','temperature_list')
+        #折线图加上头尾两个不可修改的点
         self.temperatureList.append(maxTemperature)
         self.temperatureList.insert(0,minTemperature)
         self.dutyRatioList = getListConfig('USER','duty_ratio_list')
@@ -134,8 +135,8 @@ class WinForm(QMainWindow):
     def on_button_release(self,event):
         self.canvas.mpl_disconnect(self.canvas.mpl_connect('motion_notify_event', self.on_button_move))  # 鼠标释放事件
         if self.movePointIndex != None:
-            conf.set('USER','temperature_list',str(self.temperatureList))
-            saveConfig('USER','duty_ratio_list',str(self.dutyRatioList))
+            conf.set('USER','temperature_list',str(self.temperatureList[1:-1]))
+            saveConfig('USER','duty_ratio_list',str(self.dutyRatioList[1:-1]))
         self.movePointIndex = None
     # 鼠标点击事件  函数里面又绑定了一个鼠标移动事件，所以生成的效果是鼠标按下并且移动的时候
     def on_button_press(self,event):
