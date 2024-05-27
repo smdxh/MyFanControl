@@ -276,7 +276,7 @@ class WinForm(QMainWindow):
                         x2,y2 = xdata[i],ydata[i]
                         k = (y1-y2)/(x1-x2)
                         b = y1 - k * x1
-                        self.dutyRatio = k*maxTem+b
+                        self.dutyRatio = round(k*maxTem+b)
                         break
             case _:
                 print('error') 

@@ -3,6 +3,8 @@
 获取CPU、GPU温度
 控制PWM设备，改变风扇转速
 
+![alt text](image.png)
+
 以管理员身份运行
 
 环境：
