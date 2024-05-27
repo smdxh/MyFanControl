@@ -2,10 +2,16 @@ from controlTool import *
 import sys
 from PyQt6.QtCore import QCoreApplication,QTimer,Qt,QThread,pyqtSignal
 from PyQt6.QtGui import QIcon,QAction
-from PyQt6.QtWidgets import QApplication,QMainWindow,QSystemTrayIcon,QMenu,QTabWidget,QSpinBox,QHBoxLayout
-from PyQt6.QtWidgets import QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider,QVBoxLayout,QPushButton
+from PyQt6.QtWidgets import (QApplication,QMainWindow,QSystemTrayIcon,QMenu,QTabWidget,QSpinBox,QHBoxLayout,
+QLabel,QGridLayout,QWidget,QCheckBox,QMessageBox,QSlider,QVBoxLayout,QPushButton)
 from PIL import Image, ImageDraw
+# from pyqtgraph import PlotWidget, plot
+from matplotlib import pyplot,figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import numpy as np
 TITLE = "机箱风扇控制器2.3"
+maxTemperature = 120
+minTemperature = 0
 
 class setPWMThread(QThread):
     # 定义一个信号，用于向主线程发送数据
@@ -29,6 +35,14 @@ class WinForm(QMainWindow):
         self.sysIcon = QIcon('fan.png')
         self.result = PWMResponse(PWMResponse.NONE,"0","0","无变化")
         self.isMessageBox = False # 弹窗提示待处理
+        self.movePointIndex = None # 折线图中准备拖拽的点的下标
+        self.temperatureList = getListConfig('USER','temperature_list')
+        self.temperatureList.append(maxTemperature)
+        self.temperatureList.insert(0,minTemperature)
+        self.dutyRatioList = getListConfig('USER','duty_ratio_list')
+        self.dutyRatioList.append(100)
+        self.dutyRatioList.insert(0,0)
+        self.dutyRatio = conf.getint('USER','duty_ratio')
         self.initWindow()
         self.initTrayIcon()
         self.initUI()
@@ -47,7 +61,7 @@ class WinForm(QMainWindow):
         # self.tabs.resize(300,200)
 
         self.cb1 = QCheckBox('读写超时提示',self)
-        self.cb2 = QCheckBox('PWM返回错误信号提示',self)
+        self.cb2 = QCheckBox('PWM设备错误提示',self)
         self.dragAdjustDutyRatio = QCheckBox('拖动调整占空比',self)
 
         # Add tabs
@@ -57,6 +71,7 @@ class WinForm(QMainWindow):
         self.tabs.currentChanged.connect(self.changeTab)
 
         self.tab1UI()
+        self.tab2UI()
 
         self.cb1.setChecked(conf.getint('USER','TIMEOUT_EXCEPTION'))
         self.cb2.setChecked(conf.getint('USER','RETURN_ERROR'))
@@ -101,9 +116,67 @@ class WinForm(QMainWindow):
             conf.set('USER','begin_temperature',str(self.sp1.value()))
             saveConfig('USER','max_temperature',str(self.sp2.value()))
         # print(sender.text() + '被点击')
+    def tab2UI(self):
+        self.tab2layout = QVBoxLayout(self)
+        self.tab2.setLayout(self.tab2layout)
+        self.figure = pyplot.figure()
+        self.canvas = FigureCanvas(self.figure)
+        # self.canvas.mpl_disconnect(self.canvas.manager.key_press_handler_id)  # 取消默认快捷键的注册，(没有这玩意)
+        self.canvas.mpl_connect('button_press_event', self.on_button_press)#鼠标点击事件 
+        self.canvas.mpl_connect('button_release_event', self.on_button_release)#鼠标松开
+        self.tab2layout.addWidget(self.canvas)
+        self.ax = self.figure.add_subplot(111)
+        self.setPlotAttribute()
+        # self.figure.
+        self.canvas.draw()
 
+        #鼠标释放事件，鼠标松开的时候，就把上面鼠标点击并且移动的关系解绑  这样鼠标松开的时候 就不会拖动点了
+    def on_button_release(self,event):
+        self.canvas.mpl_disconnect(self.canvas.mpl_connect('motion_notify_event', self.on_button_move))  # 鼠标释放事件
+        if self.movePointIndex != None:
+            conf.set('USER','temperature_list',str(self.temperatureList))
+            saveConfig('USER','duty_ratio_list',str(self.dutyRatioList))
+        self.movePointIndex = None
+    # 鼠标点击事件  函数里面又绑定了一个鼠标移动事件，所以生成的效果是鼠标按下并且移动的时候
+    def on_button_press(self,event):
+        if event.button==1:#1、2、3分别代表鼠标的左键、中键、右键
+            x_mouse, y_mouse= event.xdata, event.ydata#拿到鼠标当前的横纵坐标
+            x,y = self.temperatureList,self.dutyRatioList
+            oldD = 100 
+            #计算一下鼠标的位置和图上点的位置距离，如果距离很近就移动图上那个点
+            for i in range(1,len(x)-1):
+                #计算一下距离 图上每个点都和鼠标计算一下距离
+                d = np.sqrt((x_mouse -x[i] ) ** 2 + (y_mouse -y[i]) ** 2)
+                if d<5 and d < oldD:#这里设置一个阈值，如果距离很近，就把它添加到那个列表中去，选出最近的点
+                    self.movePointIndex = i
+                    oldD = d # 选出最近的点
+            if self.movePointIndex:
+                self.canvas.mpl_connect('motion_notify_event', self.on_button_move)
+    def on_button_move(self,event):
+            # print(self.movePointIndex , event)
+            ind = self.movePointIndex
+            if event.xdata:
+                x_mouse, y_mouse= round(event.xdata), round(event.ydata)#拿到鼠标当前的横纵坐标
+                if x_mouse <= self.temperatureList[ind-1] : x_mouse = self.temperatureList[ind-1] + 1
+                if x_mouse >= self.temperatureList[ind+1] : x_mouse = self.temperatureList[ind+1] - 1
+                self.temperatureList[ind] = x_mouse
+                self.dutyRatioList[ind] = y_mouse
+        #         #拟合好了以后把曲线画出来
+                self.ax.cla()
+                self.setPlotAttribute()
+                self.ax.text(x_mouse,y_mouse,'(%d,%d)'%(x_mouse,y_mouse))
+                self.canvas.draw()  # 重新绘制整个图表，所以看到的就是鼠标移动点然后曲线也跟着在变动
+
+    def setPlotAttribute(self):
+        self.ax.plot(self.temperatureList,self.dutyRatioList,marker='s')
+        self.ax.grid(True)
+        self.ax.set_xlabel('Temperature',loc='right')
+        self.ax.set_ylabel('DutyRadio',loc='top')
+        self.ax.set_xlim(minTemperature,maxTemperature) # 坐标范围
+        self.ax.set_ylim(0,100)
     def tab1UI(self):         
         self.tab1layout = QVBoxLayout(self)
+        self.tab1.setLayout(self.tab1layout)
         self.tab1layout.addWidget(QLabel("自动调整占空比："))
 
         mylayout = QGridLayout(self)
@@ -145,14 +218,7 @@ class WinForm(QMainWindow):
         self.s.setTickPosition(QSlider.TickPosition.TicksBelow) #在（水平）滑块下方绘制刻度线
 
         self.tab1layout.addWidget(self.s)
-        self.tab1.setLayout(self.tab1layout)
-
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.LeftButton:
-    #         super().mousePressEvent(event)      # 调用父级的单击事件，听说这样能不影响进度条原来的拖动
-    #         val_por = event.pos().x() / self.width()    # 获取鼠标在进度条的相对位置
-    #         self.setValue(int(val_por * self.maximum()))	# 改变进度条的值
-    #         # self.cliecked.emit(self.value())	# 点击发送信号，这里可不要    
+  
     # 输入框变化
     def valueChange1(self,a):
         self.dragAdjustDutyRatio.setChecked(Qt.CheckState.Unchecked.value)
@@ -195,10 +261,25 @@ class WinForm(QMainWindow):
         cpuTem = getCPUTemp()
         maxTem = gpuTem
         if cpuTem > gpuTem : maxTem = cpuTem
-        if self.dragAdjustDutyRatio.isChecked():
-            self.dutyRatio = self.s.value()
-        else:
-            self.dutyRatio = round((maxTem-self.sp1.value()) * (100/(self.sp2.value()-self.sp1.value())))
+        match self.tabs.currentIndex():
+            case 0:
+                if self.dragAdjustDutyRatio.isChecked():
+                    self.dutyRatio = self.s.value()
+                else:
+                    self.dutyRatio = round((maxTem-self.sp1.value()) * (100/(self.sp2.value()-self.sp1.value())))
+            case 1:
+                xdata = self.ax.lines[0].get_xdata()
+                ydata = self.ax.lines[0].get_ydata()
+                for i in range(len(xdata)):
+                    if xdata[i] > maxTem:
+                        x1,y1 = xdata[i-1],ydata[i-1]
+                        x2,y2 = xdata[i],ydata[i]
+                        k = (y1-y2)/(x1-x2)
+                        b = y1 - k * x1
+                        self.dutyRatio = k*maxTem+b
+                        break
+            case _:
+                print('error') 
         self.label1.setText("CPU温度：%d" %cpuTem)
         self.label2.setText("GPU温度：%d" %gpuTem)
         if self.mythread.isRunning() :
@@ -258,7 +339,7 @@ class WinForm(QMainWindow):
     # 初始化主界面
     def initWindow(self):
         self.setWindowTitle(TITLE)
-        self.resize(400,300)
+        self.resize(400,350)
         self.setWindowIcon(self.sysIcon)
 
     #创建托盘图标

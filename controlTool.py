@@ -18,6 +18,10 @@ def saveConfig(section, option, value=None):
     conf.set(section,option,str(value))
     with open('config.ini','w') as configfile:
         conf.write(configfile)
+#转int类型的list
+def getListConfig(section, option):
+    return list(map(int,conf.get(section,option)[1:-1].split(',')))
+
 
 
 def iniConfig():
@@ -35,11 +39,13 @@ def iniConfig():
     conf['USER'] = {
         'TIMEOUT_EXCEPTION' : 2, 
         'RETURN_ERROR' : 2, 
-        'manual' : 0, 
+        'manual' : 0, #tab1（默认标签）中占空比的控制方式是自动还是拖动
         'tabs_index' : 0, 
         'begin_temperature' : 20,
         'max_temperature' : 80,
         'duty_ratio':0,
+        'duty_ratio_list':[10,30,70,100],
+        'temperature_list':[10,40,60,90],
 
     }
 
