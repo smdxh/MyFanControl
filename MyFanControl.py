@@ -142,6 +142,7 @@ class WinForm(QMainWindow):
     def on_button_press(self,event):
         if event.button==1:#1、2、3分别代表鼠标的左键、中键、右键
             x_mouse, y_mouse= event.xdata, event.ydata#拿到鼠标当前的横纵坐标
+            if not x_mouse :return #鼠标点到外面了
             x,y = self.temperatureList,self.dutyRatioList
             oldD = 100 
             #计算一下鼠标的位置和图上点的位置距离，如果距离很近就移动图上那个点
