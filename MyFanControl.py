@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from matplotlib import pyplot,figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
-TITLE = "机箱风扇控制器2.3"
+TITLE = "机箱风扇控制器3.0"
 maxTemperature = 120
 minTemperature = 0
 
