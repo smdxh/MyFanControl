@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from matplotlib import pyplot,figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import numpy as np
-TITLE = "机箱风扇控制器3.0"
+TITLE = "机箱风扇控制器3.1"
 maxTemperature = 120
 minTemperature = 0
 
@@ -121,12 +121,15 @@ class WinForm(QMainWindow):
         self.tab2layout = QVBoxLayout(self)
         self.tab2.setLayout(self.tab2layout)
         self.figure = pyplot.figure()
+        self.figure.set_alpha(0.0)
         self.canvas = FigureCanvas(self.figure)
         # self.canvas.mpl_disconnect(self.canvas.manager.key_press_handler_id)  # 取消默认快捷键的注册，(没有这玩意)
         self.canvas.mpl_connect('button_press_event', self.on_button_press)#鼠标点击事件 
         self.canvas.mpl_connect('button_release_event', self.on_button_release)#鼠标松开
+        # self.canvas.setContentsMargins(100,0,0,100)
         self.tab2layout.addWidget(self.canvas)
         self.ax = self.figure.add_subplot(111)
+        pyplot.gcf().subplots_adjust(left=0.2,top=0.9,bottom=0.25, right=0.9)
         self.setPlotAttribute()
         # self.figure.
         self.canvas.draw()
@@ -170,10 +173,10 @@ class WinForm(QMainWindow):
                 self.canvas.draw()  # 重新绘制整个图表，所以看到的就是鼠标移动点然后曲线也跟着在变动
 
     def setPlotAttribute(self):
+        self.ax.set_xlabel('Temperature(℃)',loc='right')
+        self.ax.set_ylabel('DutyRadio(%)',loc='top')
         self.ax.plot(self.temperatureList,self.dutyRatioList,marker='s')
         self.ax.grid(True)
-        self.ax.set_xlabel('Temperature',loc='right')
-        self.ax.set_ylabel('DutyRadio',loc='top')
         self.ax.set_xlim(minTemperature,maxTemperature) # 坐标范围
         self.ax.set_ylim(0,100)
     def tab1UI(self):         
