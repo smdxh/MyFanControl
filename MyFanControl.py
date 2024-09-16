@@ -134,7 +134,7 @@ class WinForm(QMainWindow):
         # self.ax.spines['left'].set_alpha(0) # 表格上下左右框的线透明了
         # self.ax.patch.set_alpha(0) #设置绘图区域透明
         pyplot.gcf().subplots_adjust(left=0.2,top=0.9,bottom=0.25, right=0.9)
-        pyplot.style.use('dark_background')
+        # pyplot.style.use('dark_background')
         # self.ax.set_facecolor('#FFFFFF')
         self.setPlotAttribute()
         # self.figure.
