@@ -165,8 +165,8 @@ class WinForm(QMainWindow):
             #计算一下鼠标的位置和图上点的位置距离，如果距离很近就移动图上那个点
             for i in range(1,len(x)-1):
                 #计算一下距离 图上每个点都和鼠标计算一下距离
-                d = np.sqrt((x_mouse -x[i] ) ** 2 + (y_mouse -y[i]) ** 2)
-                if d<5 and d < oldD:#这里设置一个阈值，如果距离很近，就把它添加到那个列表中去，选出最近的点
+                d = (x_mouse -x[i] ) **2 + (y_mouse -y[i]) ** 2
+                if d<25 and d < oldD:#这里设置一个阈值，如果距离很近，就把它添加到那个列表中去，选出最近的点
                     self.movePointIndex = i
                     oldD = d # 选出最近的点
             if self.movePointIndex:
