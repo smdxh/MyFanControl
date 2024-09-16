@@ -12,4 +12,4 @@ pip install pythonnet
 pip install pyserial
 pip install pillow
 pip install pyqt6 -i https://pypi.tuna.tsinghua.edu.cn/simple/
-pip install matplotlib
+pip install matplotlib -i https://pypi.tuna.tsinghua.edu.cn/simple/

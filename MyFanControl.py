@@ -8,8 +8,9 @@ from PIL import Image, ImageDraw
 # from pyqtgraph import PlotWidget, plot
 from matplotlib import pyplot,figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+# from PyQtDarkTheme import DarkStyle
 import numpy as np
-TITLE = "机箱风扇控制器3.1"
+TITLE = "机箱风扇控制器3.2"
 maxTemperature = 120
 minTemperature = 0
 
@@ -121,7 +122,8 @@ class WinForm(QMainWindow):
         self.tab2layout = QVBoxLayout(self)
         self.tab2.setLayout(self.tab2layout)
         self.figure = pyplot.figure()
-        self.figure.set_alpha(0.0)
+        # self.figure.set_alpha(0)
+        # self.figure.patch.set_alpha(0) #设置画布透明
         self.canvas = FigureCanvas(self.figure)
         # self.canvas.mpl_disconnect(self.canvas.manager.key_press_handler_id)  # 取消默认快捷键的注册，(没有这玩意)
         self.canvas.mpl_connect('button_press_event', self.on_button_press)#鼠标点击事件 
@@ -129,10 +131,22 @@ class WinForm(QMainWindow):
         # self.canvas.setContentsMargins(100,0,0,100)
         self.tab2layout.addWidget(self.canvas)
         self.ax = self.figure.add_subplot(111)
+        # self.ax.spines['left'].set_alpha(0) # 表格上下左右框的线透明了
+        # self.ax.patch.set_alpha(0) #设置绘图区域透明
         pyplot.gcf().subplots_adjust(left=0.2,top=0.9,bottom=0.25, right=0.9)
+        pyplot.style.use('dark_background')
+        # self.ax.set_facecolor('#FFFFFF')
         self.setPlotAttribute()
         # self.figure.
         self.canvas.draw()
+    def setPlotAttribute(self):
+        # self.ax.set_alpha(0)
+        self.ax.set_xlabel('Temperature(℃)',loc='right')
+        self.ax.set_ylabel('DutyRadio(%)',loc='top')
+        self.ax.plot(self.temperatureList,self.dutyRatioList,marker='s')
+        self.ax.grid(True)
+        self.ax.set_xlim(minTemperature,maxTemperature) # 坐标范围
+        self.ax.set_ylim(0,100)
 
         #鼠标释放事件，鼠标松开的时候，就把上面鼠标点击并且移动的关系解绑  这样鼠标松开的时候 就不会拖动点了
     def on_button_release(self,event):
@@ -172,13 +186,6 @@ class WinForm(QMainWindow):
                 self.ax.text(x_mouse,y_mouse,'(%d,%d)'%(x_mouse,y_mouse))
                 self.canvas.draw()  # 重新绘制整个图表，所以看到的就是鼠标移动点然后曲线也跟着在变动
 
-    def setPlotAttribute(self):
-        self.ax.set_xlabel('Temperature(℃)',loc='right')
-        self.ax.set_ylabel('DutyRadio(%)',loc='top')
-        self.ax.plot(self.temperatureList,self.dutyRatioList,marker='s')
-        self.ax.grid(True)
-        self.ax.set_xlim(minTemperature,maxTemperature) # 坐标范围
-        self.ax.set_ylim(0,100)
     def tab1UI(self):         
         self.tab1layout = QVBoxLayout(self)
         self.tab1.setLayout(self.tab1layout)
@@ -370,6 +377,7 @@ class WinForm(QMainWindow):
 
 if __name__ == '__main__':
     app=QApplication(sys.argv)
+    app.setStyle('fusion')
     QApplication.setQuitOnLastWindowClosed(False) # 关闭最后一个窗口不退出程序
     win=WinForm()
     win.show()

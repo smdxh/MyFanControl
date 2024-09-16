@@ -13,15 +13,6 @@ clr.AddReference('OpenHardwareMonitorLib')
 from OpenHardwareMonitor.Hardware import Computer # type: ignore
 
 conf = configparser.ConfigParser()
-conf.read('config.ini')
-def saveConfig(section, option, value=None):
-    conf.set(section,option,str(value))
-    with open('config.ini','w') as configfile:
-        conf.write(configfile)
-#转int类型的list
-def getListConfig(section, option):
-    return list(map(int,conf.get(section,option)[1:-1].split(',')))
-
 
 
 def iniConfig():
@@ -51,6 +42,20 @@ def iniConfig():
 
     with open('config.ini','w') as configfile:
         conf.write(configfile)
+try:
+    conf.read('config.ini')
+except Exception as r:
+    iniConfig()
+def saveConfig(section, option, value=None):
+    conf.set(section,option,str(value))
+    with open('config.ini','w') as configfile:
+        conf.write(configfile)
+#转int类型的list
+def getListConfig(section, option):
+    return list(map(int,conf.get(section,option)[1:-1].split(',')))
+
+
+
 if "serial" not in conf:
     iniConfig()
 
